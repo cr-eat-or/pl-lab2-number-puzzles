@@ -9,7 +9,7 @@ EXE     = $(if $(OS),.exe,)
 
 SRC_LIB = src/puzzle.c src/solver.c
 
-.PHONY: all build test bench profile clean
+.PHONY: all build test bench profile profile-docker clean
 
 all: build
 
@@ -35,8 +35,16 @@ bench: $(BUILD)/bench$(EXE)
 	mkdir -p results
 	./$(BUILD)/bench $(FILE) $(REPEATS) > results/$(VER).csv
 
+# gprof: сборка с -pg без оптимизаций, один прогон набора -> results/profile_$(VER).txt
 profile:
-	@echo "TODO: цель profile (пункт 2.1)"
+	mkdir -p $(BUILD) results
+	$(CC) $(CFLAGS) -O0 -pg -Isrc bench/bench.c $(SRC_LIB) -o $(BUILD)/bench_prof$(EXE)
+	./$(BUILD)/bench_prof $(FILE) 1 > /dev/null
+	gprof $(BUILD)/bench_prof$(EXE) gmon.out > results/profile_$(VER).txt
+
+# gprof не работает под MinGW, поэтому профиль снимаем в Linux-контейнере
+profile-docker:
+	MSYS_NO_PATHCONV=1 docker run --rm -v "$(CURDIR):/work" -w /work gcc:14 make profile VER=$(VER) FILE=$(FILE)
 
 clean:
 	rm -rf $(BUILD) gmon.out
