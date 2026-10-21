@@ -2,7 +2,6 @@
 build/
 *.o
 *.exe
-gmon.out
 
 # Временные файлы
 *.tmp

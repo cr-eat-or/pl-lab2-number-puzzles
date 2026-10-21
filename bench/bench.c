@@ -1,7 +1,3 @@
-#ifndef _WIN32
-#define _POSIX_C_SOURCE 199309L /* clock_gettime при -std=c11 */
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

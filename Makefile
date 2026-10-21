@@ -9,7 +9,7 @@ EXE     = $(if $(OS),.exe,)
 
 SRC_LIB = src/puzzle.c src/solver.c
 
-.PHONY: all build test bench profile profile-docker clean
+.PHONY: all build test bench profile clean
 
 all: build
 
@@ -35,16 +35,11 @@ bench: $(BUILD)/bench$(EXE)
 	mkdir -p results
 	./$(BUILD)/bench $(FILE) $(REPEATS) > results/$(VER).csv
 
-# gprof: сборка с -pg без оптимизаций, один прогон набора -> results/profile_$(VER).txt
+# Very Sleepy: бенчмарк с отладочными символами (-g), без оптимизаций.
+# Дальше запускаем build/bench_vs.exe из Very Sleepy (аргументы: набор ребусов и число повторов).
 profile:
-	mkdir -p $(BUILD) results
-	$(CC) $(CFLAGS) -O0 -pg -Isrc bench/bench.c $(SRC_LIB) -o $(BUILD)/bench_prof$(EXE)
-	./$(BUILD)/bench_prof $(FILE) 1 > /dev/null
-	gprof $(BUILD)/bench_prof$(EXE) gmon.out > results/profile_$(VER).txt
-
-# gprof не работает под MinGW, поэтому профиль снимаем в Linux-контейнере
-profile-docker:
-	MSYS_NO_PATHCONV=1 docker run --rm -v "$(CURDIR):/work" -w /work gcc:14 make profile VER=$(VER) FILE=$(FILE)
+	mkdir -p $(BUILD)
+	$(CC) $(CFLAGS) -O0 -g -Isrc bench/bench.c $(SRC_LIB) -o $(BUILD)/bench_vs$(EXE)
 
 clean:
-	rm -rf $(BUILD) gmon.out
+	rm -rf $(BUILD)
