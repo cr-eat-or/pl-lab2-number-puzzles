@@ -4,15 +4,14 @@
 #include "puzzle.h"
 #include "solver.h"
 
-//Значение слова при текущих цифрах: ищем букву, собираем строку, переводим в число
-static long long word_value(const char *word, const char *letters, const int *digits)
+//Значение слова при текущих цифрах: берём индекс буквы из таблицы, собираем строку, переводим в число
+static long long word_value(const char *word, const int *index_of, const int *digits)
 {
     char buf[MAX_LEN + 1];
+    size_t len = strlen(word); //длина считается один раз, а не на каждой итерации
 
-    for (size_t i = 0; i < strlen(word); i++) {
-        const char *pos = strchr(letters, word[i]);
-        sprintf(buf + i, "%d", digits[pos - letters]);
-    }
+    for (size_t i = 0; i < len; i++)
+        sprintf(buf + i, "%d", digits[index_of[word[i] - 'A']]);
     return atoll(buf);
 }
 
@@ -39,13 +38,13 @@ static int no_leading_zero(const Puzzle *p, const int *digits)
 }
 
 //Выполняется ли равенство при текущих цифрах
-static int is_solution(const Puzzle *p, const int *digits)
+static int is_solution(const Puzzle *p, const int *index_of, const int *digits)
 {
     long long sum = 0;
 
     for (int i = 0; i < p->word_count; i++)
-        sum += word_value(p->words[i], p->letters, digits);
-    return sum == word_value(p->result, p->letters, digits);
+        sum += word_value(p->words[i], index_of, digits);
+    return sum == word_value(p->result, index_of, digits);
 }
 
 //Следующий набор цифр, как счётчик. ret 0, когда перебор закончен
@@ -65,9 +64,13 @@ int solve_puzzle(const char *input, char *out, size_t out_size)
 {
     Puzzle p;
     int digits[MAX_LETTERS] = {0};
+    int index_of[26]; //буква -> её номер в p.letters, строится один раз
 
     if (puzzle_parse(input, &p) != 0)
         return -1;
+
+    for (int i = 0; i < p.letter_count; i++)
+        index_of[p.letters[i] - 'A'] = i;
 
     //перебираем
     do {
@@ -75,19 +78,19 @@ int solve_puzzle(const char *input, char *out, size_t out_size)
             continue;
         if (!no_leading_zero(&p, digits))
             continue;
-        if (!is_solution(&p, digits))
+        if (!is_solution(&p, index_of, digits))
             continue;
 
         //ответ
         char line[256] = "";
         char num[32];
         for (int i = 0; i < p.word_count; i++) {
-            sprintf(num, "%lld", word_value(p.words[i], p.letters, digits));
+            sprintf(num, "%lld", word_value(p.words[i], index_of, digits));
             if (i > 0)
                 strcat(line, " + ");
             strcat(line, num);
         }
-        sprintf(num, "%lld", word_value(p.result, p.letters, digits));
+        sprintf(num, "%lld", word_value(p.result, index_of, digits));
         strcat(line, " = ");
         strcat(line, num);
 
