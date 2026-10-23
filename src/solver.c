@@ -1,18 +1,16 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "puzzle.h"
 #include "solver.h"
 
-//Значение слова при текущих цифрах: берём индекс буквы из таблицы, собираем строку, переводим в число
+//Значение слова при текущих цифрах: схема Горнера, без промежуточной строки
 static long long word_value(const char *word, const int *index_of, const int *digits)
 {
-    char buf[MAX_LEN + 1];
-    size_t len = strlen(word); //длина считается один раз, а не на каждой итерации
+    long long value = 0;
 
-    for (size_t i = 0; i < len; i++)
-        sprintf(buf + i, "%d", digits[index_of[word[i] - 'A']]);
-    return atoll(buf);
+    for (const char *c = word; *c; c++)
+        value = value * 10 + digits[index_of[*c - 'A']];
+    return value;
 }
 
 //Все ли цифры в наборе различны (проверка парами)
